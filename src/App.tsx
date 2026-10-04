@@ -47,6 +47,7 @@ import { NotificationSettingsModal } from './components/NotificationSettingsModa
 import { QuickExpenseFab } from './components/QuickExpenseFab';
 import { QuickAddExpenseModal, QuickExpenseItem } from './components/QuickAddExpenseModal';
 import { SpendingLeaksPieChart } from './components/SpendingLeaksPieChart';
+import { WealthProjectionWidget } from './components/WealthProjectionWidget';
 import { ThemeToggle, AppTheme } from './components/ThemeToggle';
 import { BudgetThresholdToast, BudgetThresholdToastData } from './components/BudgetThresholdToast';
 import { BudgetThresholdMonitor } from './components/BudgetThresholdMonitor';
@@ -1127,6 +1128,19 @@ export default function App() {
                     {/* 5. Quick Win Task for Tomorrow */}
                     <QuickWinCard quickWin={analysis.quickWinTomorrow} />
                   </div>
+
+                  {/* 6. Interactive Wealth Projection Widget (1, 5, 10-Year Compounding Visualizer) */}
+                  <WealthProjectionWidget
+                    dailyLeakage={
+                      analysis.microRoiWealthShift?.savedToday ||
+                      analysis.totalDailyWaste ||
+                      (selectedCurrency === 'INR' ? 500 : 12)
+                    }
+                    currencySymbol={analysis.currencySymbol || activeCurrencySymbol}
+                    currencyCode={selectedCurrency}
+                    wealthGoal={analysis.wealthGoal || wealthGoal}
+                    onOpenSimulatorModal={() => setIsSimulatorOpen(true)}
+                  />
                 </>
               )}
 
