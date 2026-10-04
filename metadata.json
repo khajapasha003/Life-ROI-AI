@@ -1,0 +1,6 @@
+{
+  "name": "LifeROI AI",
+  "description": "World-class personal lifestyle, micro-habit, and daily expense optimization engine for immediate financial leak detection and micro-ROI wealth shifting.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
