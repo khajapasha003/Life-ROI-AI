@@ -43,6 +43,8 @@ import { VoiceLoggerButton } from './components/VoiceLoggerButton';
 import { MicroHabitsTracker } from './components/MicroHabitsTracker';
 import { DailyReflectionCard } from './components/DailyReflectionCard';
 import { NotificationSettingsModal } from './components/NotificationSettingsModal';
+import { QuickExpenseFab } from './components/QuickExpenseFab';
+import { QuickAddExpenseModal } from './components/QuickAddExpenseModal';
 import {
   getSavedNotificationSettings,
   scheduleEveningNotification,
@@ -74,6 +76,7 @@ export default function App() {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isMilestonesOpen, setIsMilestonesOpen] = useState(false);
   const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
+  const [isQuickExpenseOpen, setIsQuickExpenseOpen] = useState(false);
   const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>(getSavedNotificationSettings);
   const [simulatedStreak, setSimulatedStreak] = useState<number | undefined>(undefined);
   const [copiedReport, setCopiedReport] = useState(false);
@@ -168,8 +171,9 @@ export default function App() {
     reader.readAsDataURL(file);
   };
 
-  const runAnalysis = async () => {
-    if (!logText.trim() && !selectedImage) {
+  const runAnalysis = async (overrideText?: string | React.MouseEvent) => {
+    const textToAnalyze = typeof overrideText === 'string' ? overrideText : logText;
+    if (!textToAnalyze.trim() && !selectedImage) {
       setErrorMsg('Please enter your daily habits & expenses, or upload a receipt.');
       return;
     }
@@ -182,7 +186,7 @@ export default function App() {
         currency: selectedCurrency,
       };
 
-      let combinedLog = logText.trim();
+      let combinedLog = textToAnalyze.trim();
       if (dailyReflection.trim()) {
         combinedLog = combinedLog
           ? `${combinedLog}\n\n[Daily Reflection - Emotional Sentiment]: ${dailyReflection.trim()}`
@@ -234,6 +238,14 @@ export default function App() {
       setErrorMsg('Using local optimization engine (API connection offline or pending).');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleQuickExpenseAdded = (formattedLine: string, triggerAuditNow: boolean) => {
+    const newText = logText.trim() ? `${logText.trim()}\n${formattedLine}` : formattedLine;
+    setLogText(newText);
+    if (triggerAuditNow) {
+      runAnalysis(newText);
     }
   };
 
@@ -985,6 +997,21 @@ export default function App() {
         isOpen={isNotificationModalOpen}
         onClose={() => setIsNotificationModalOpen(false)}
         onSettingsSaved={(newSettings) => setNotificationSettings(newSettings)}
+      />
+
+      {/* Floating Action Button (Bottom-Right Corner) for Rapid Expense Logging */}
+      <QuickExpenseFab
+        onClick={() => setIsQuickExpenseOpen(true)}
+        currencySymbol={activeCurrencySymbol}
+      />
+
+      {/* Quick Add Expense Modal */}
+      <QuickAddExpenseModal
+        isOpen={isQuickExpenseOpen}
+        onClose={() => setIsQuickExpenseOpen(false)}
+        currencySymbol={activeCurrencySymbol}
+        currencyCode={selectedCurrency}
+        onExpenseAdded={handleQuickExpenseAdded}
       />
     </div>
   );
