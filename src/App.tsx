@@ -45,7 +45,8 @@ import { MicroHabitsTracker } from './components/MicroHabitsTracker';
 import { DailyReflectionCard } from './components/DailyReflectionCard';
 import { NotificationSettingsModal } from './components/NotificationSettingsModal';
 import { QuickExpenseFab } from './components/QuickExpenseFab';
-import { QuickAddExpenseModal } from './components/QuickAddExpenseModal';
+import { QuickAddExpenseModal, QuickExpenseItem } from './components/QuickAddExpenseModal';
+import { SpendingLeaksPieChart } from './components/SpendingLeaksPieChart';
 import { BudgetThresholdToast, BudgetThresholdToastData } from './components/BudgetThresholdToast';
 import { BudgetThresholdMonitor } from './components/BudgetThresholdMonitor';
 import { parseDailyGoalTarget, computeBudgetThreshold } from './utils/budgetThreshold';
@@ -209,6 +210,29 @@ export default function App() {
     }
   };
 
+  // Sync quick expenses for spending leak breakdown pie chart
+  const [quickExpenses, setQuickExpenses] = useState<QuickExpenseItem[]>(() => {
+    try {
+      const saved = localStorage.getItem('liferoi_quick_expenses');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    const handleUpdate = () => {
+      try {
+        const saved = localStorage.getItem('liferoi_quick_expenses');
+        setQuickExpenses(saved ? JSON.parse(saved) : []);
+      } catch (e) {
+        console.warn(e);
+      }
+    };
+    window.addEventListener('liferoi_quick_expenses_updated', handleUpdate);
+    return () => window.removeEventListener('liferoi_quick_expenses_updated', handleUpdate);
+  }, []);
+
   // Sync initial sample analysis on first load if none exists
   useEffect(() => {
     if (!analysis) {
@@ -333,6 +357,12 @@ export default function App() {
   const handleQuickExpenseAdded = (formattedLine: string, triggerAuditNow: boolean) => {
     const newText = logText.trim() ? `${logText.trim()}\n${formattedLine}` : formattedLine;
     setLogText(newText);
+    try {
+      const saved = localStorage.getItem('liferoi_quick_expenses');
+      if (saved) setQuickExpenses(JSON.parse(saved));
+    } catch (e) {
+      console.warn(e);
+    }
     if (triggerAuditNow) {
       runAnalysis(newText);
     }
@@ -1019,15 +1049,29 @@ export default function App() {
                     onViewLeaks={handleScrollToLeaks}
                   />
 
-                  {/* Bento Grid: 4 Core Pillars */}
-                  <div id="leaks-card-section" className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* 2. Leaks Detected */}
-                    <LeaksCard
+                  {/* Leaks Visualization Deck: Breakdown Pie Chart + Leaks Detected */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Spending Leak Breakdown Pie Chart */}
+                    <SpendingLeaksPieChart
                       leaks={analysis.leaksDetected}
-                      currencySymbol={analysis.currencySymbol}
+                      quickExpenses={quickExpenses}
+                      currencySymbol={analysis.currencySymbol || activeCurrencySymbol}
                       totalMonthlyWaste={analysis.totalMonthlyWaste}
+                      onOpenQuickAdd={() => setIsQuickExpenseOpen(true)}
                     />
 
+                    {/* Detected Leaks List */}
+                    <div id="leaks-card-section">
+                      <LeaksCard
+                        leaks={analysis.leaksDetected}
+                        currencySymbol={analysis.currencySymbol}
+                        totalMonthlyWaste={analysis.totalMonthlyWaste}
+                      />
+                    </div>
+                  </div>
+
+                  {/* 3 Bento Core Pillars: Optimization, Compounding Runway, Quick Win */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     {/* 3. Immediate Optimization Fix */}
                     <OptimizationSwapCard
                       fix={analysis.immediateOptimizationFix}

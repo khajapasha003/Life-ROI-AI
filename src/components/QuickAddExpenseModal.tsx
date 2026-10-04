@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Plus,
   X,
   Zap,
   Tag,
@@ -13,10 +12,14 @@ import {
   AlertTriangle,
   History,
   Trash2,
+  ChevronDown,
+  Film,
+  HeartPulse,
+  AlertCircle,
 } from 'lucide-react';
 import { CurrencyCode } from '../types/roi';
 
-interface QuickExpenseItem {
+export interface QuickExpenseItem {
   id: string;
   amount: number;
   category: string;
@@ -33,12 +36,71 @@ interface QuickAddExpenseModalProps {
   onExpenseAdded: (formattedLogLine: string, triggerAuditNow: boolean) => void;
 }
 
-const CATEGORIES = [
-  { name: 'Coffee / Tea', icon: Coffee, defaultName: 'Cafe Beverage' },
-  { name: 'Food Delivery', icon: UtensilsCrossed, defaultName: 'Food Delivery / Takeout' },
-  { name: 'Ride / Cab', icon: Car, defaultName: 'Convenience Cab' },
-  { name: 'Shopping / Retail', icon: ShoppingBag, defaultName: 'Impulse Purchase' },
-  { name: 'Digital Sub', icon: Tv, defaultName: 'Micro-Subscription' },
+export const QUICK_CATEGORIES = [
+  {
+    name: 'Food & Dining',
+    shortLabel: 'Food',
+    emoji: '🍲',
+    icon: UtensilsCrossed,
+    defaultName: 'Food / Takeout',
+    group: 'Core Daily Spending',
+  },
+  {
+    name: 'Subscriptions',
+    shortLabel: 'Subscriptions',
+    emoji: '📱',
+    icon: Tv,
+    defaultName: 'Digital Streaming / SaaS',
+    group: 'Core Daily Spending',
+  },
+  {
+    name: 'Utilities',
+    shortLabel: 'Utilities',
+    emoji: '⚡',
+    icon: Zap,
+    defaultName: 'Utility Bill / Internet',
+    group: 'Core Daily Spending',
+  },
+  {
+    name: 'Transport & Rides',
+    shortLabel: 'Transport',
+    emoji: '🚗',
+    icon: Car,
+    defaultName: 'Rideshare / Fuel',
+    group: 'Discretionary & Lifestyle',
+  },
+  {
+    name: 'Shopping & Retail',
+    shortLabel: 'Shopping',
+    emoji: '🛍️',
+    icon: ShoppingBag,
+    defaultName: 'Impulse Retail Purchase',
+    group: 'Discretionary & Lifestyle',
+  },
+  {
+    name: 'Entertainment & Leisure',
+    shortLabel: 'Entertainment',
+    emoji: '🎮',
+    icon: Film,
+    defaultName: 'Gaming / Outing',
+    group: 'Discretionary & Lifestyle',
+  },
+  {
+    name: 'Health & Personal Care',
+    shortLabel: 'Health',
+    emoji: '💪',
+    icon: HeartPulse,
+    defaultName: 'Gym / Personal Care',
+    group: 'Personal & Financial',
+  },
+  {
+    name: 'Fees & Miscellaneous',
+    shortLabel: 'Fees / Misc',
+    emoji: '⚠️',
+    icon: AlertCircle,
+    defaultName: 'Convenience / Late Fee',
+    group: 'Personal & Financial',
+  },
 ];
 
 const STORAGE_KEY = 'liferoi_quick_expenses';
@@ -52,7 +114,7 @@ export const QuickAddExpenseModal: React.FC<QuickAddExpenseModalProps> = ({
 }) => {
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
-  const [category, setCategory] = useState(CATEGORIES[0].name);
+  const [category, setCategory] = useState(QUICK_CATEGORIES[0].name);
   const [isImpulse, setIsImpulse] = useState(true);
   const [recentExpenses, setRecentExpenses] = useState<QuickExpenseItem[]>(() => {
     try {
@@ -68,7 +130,7 @@ export const QuickAddExpenseModal: React.FC<QuickAddExpenseModalProps> = ({
     if (isOpen) {
       setAmount('');
       setDescription('');
-      setCategory(CATEGORIES[0].name);
+      setCategory(QUICK_CATEGORIES[0].name);
       setIsImpulse(true);
       setSuccessToast(false);
     }
@@ -79,6 +141,16 @@ export const QuickAddExpenseModal: React.FC<QuickAddExpenseModalProps> = ({
   const numAmount = parseFloat(amount) || 0;
   const recoverableDaily = isImpulse ? Math.round(numAmount * 0.72 * 100) / 100 : 0;
   const tenYearCompoundAt12 = isImpulse ? Math.round(recoverableDaily * 30 * 12 * 17.5) : 0;
+
+  const handleCategoryChange = (selectedCatName: string) => {
+    setCategory(selectedCatName);
+    const catObj = QUICK_CATEGORIES.find((c) => c.name === selectedCatName);
+    // If description is empty or currently matches a default from any category, replace with new default
+    const isCurrentDefault = QUICK_CATEGORIES.some((c) => c.defaultName === description);
+    if (!description.trim() || isCurrentDefault) {
+      setDescription(catObj?.defaultName || selectedCatName);
+    }
+  };
 
   const handleSaveExpense = (triggerAudit: boolean) => {
     if (numAmount <= 0) return;
@@ -100,6 +172,8 @@ export const QuickAddExpenseModal: React.FC<QuickAddExpenseModalProps> = ({
     setRecentExpenses(updated);
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      // Dispatch storage event so dashboard pie chart updates immediately in real-time
+      window.dispatchEvent(new Event('liferoi_quick_expenses_updated'));
     } catch (e) {
       console.warn('Failed to save to localStorage', e);
     }
@@ -123,6 +197,7 @@ export const QuickAddExpenseModal: React.FC<QuickAddExpenseModalProps> = ({
     setRecentExpenses(filtered);
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
+      window.dispatchEvent(new Event('liferoi_quick_expenses_updated'));
     } catch (err) {
       console.warn(err);
     }
@@ -131,6 +206,7 @@ export const QuickAddExpenseModal: React.FC<QuickAddExpenseModalProps> = ({
   const handleClearHistory = () => {
     setRecentExpenses([]);
     localStorage.removeItem(STORAGE_KEY);
+    window.dispatchEvent(new Event('liferoi_quick_expenses_updated'));
   };
 
   return (
@@ -182,31 +258,59 @@ export const QuickAddExpenseModal: React.FC<QuickAddExpenseModalProps> = ({
             </div>
           </div>
 
-          {/* Quick Categories */}
+          {/* Spending Category Dropdown & Quick Chips */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-zinc-300">Category</label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
-              {CATEGORIES.map((cat) => {
-                const Icon = cat.icon;
+            <div className="flex items-center justify-between">
+              <label htmlFor="spending-category-dropdown" className="text-xs font-semibold text-zinc-300 flex items-center gap-1.5">
+                <Tag className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Spending Category</span>
+              </label>
+              <span className="text-[10px] text-zinc-500 font-mono">Category Dropdown</span>
+            </div>
+
+            {/* Dropdown Selector */}
+            <div className="relative">
+              <select
+                id="spending-category-dropdown"
+                value={category}
+                onChange={(e) => handleCategoryChange(e.target.value)}
+                className="w-full appearance-none pl-3.5 pr-10 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-xs font-medium text-zinc-100 focus:outline-none focus:border-emerald-500 transition-colors cursor-pointer"
+              >
+                <optgroup label="Core Daily Spending">
+                  <option value="Food & Dining">🍲 Food & Dining (e.g., Takeout, Dining, Coffee, Groceries)</option>
+                  <option value="Subscriptions">📱 Subscriptions (e.g., Netflix, Spotify, SaaS, Cloud Apps)</option>
+                  <option value="Utilities">⚡ Utilities & Bills (e.g., Electricity, Internet, Mobile, Water)</option>
+                </optgroup>
+                <optgroup label="Discretionary & Lifestyle">
+                  <option value="Transport & Rides">🚗 Transport & Rides (e.g., Uber/Cab, Fuel, Transit, Parking)</option>
+                  <option value="Shopping & Retail">🛍️ Shopping & Retail (e.g., Apparel, Amazon, Gadgets, Impulse)</option>
+                  <option value="Entertainment & Leisure">🎮 Entertainment & Leisure (e.g., Gaming, Movies, Events, Bars)</option>
+                </optgroup>
+                <optgroup label="Personal & Financial">
+                  <option value="Health & Personal Care">💪 Health & Personal Care (e.g., Gym, Supplements, Grooming)</option>
+                  <option value="Fees & Miscellaneous">⚠️ Fees & Miscellaneous (e.g., Convenience, Overdraft, Late Fees)</option>
+                </optgroup>
+              </select>
+              <ChevronDown className="absolute right-3.5 top-3 w-4 h-4 text-zinc-400 pointer-events-none" />
+            </div>
+
+            {/* Quick 1-Tap Category Pills */}
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              {QUICK_CATEGORIES.map((cat) => {
                 const isSelected = category === cat.name;
                 return (
                   <button
                     key={cat.name}
                     type="button"
-                    onClick={() => {
-                      setCategory(cat.name);
-                      if (!description) {
-                        setDescription(cat.defaultName);
-                      }
-                    }}
-                    className={`p-2 rounded-xl border text-xs flex items-center gap-2 transition-all cursor-pointer ${
+                    onClick={() => handleCategoryChange(cat.name)}
+                    className={`px-2 py-1 rounded-lg border text-[11px] flex items-center gap-1.5 transition-all cursor-pointer ${
                       isSelected
-                        ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300 font-semibold'
-                        : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'
+                        ? 'bg-emerald-500/15 border-emerald-500/50 text-emerald-300 font-semibold'
+                        : 'bg-zinc-950/80 border-zinc-800/80 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40'
                     }`}
                   >
-                    <Icon className="w-3.5 h-3.5 shrink-0" />
-                    <span className="truncate">{cat.name}</span>
+                    <span>{cat.emoji}</span>
+                    <span>{cat.shortLabel}</span>
                   </button>
                 );
               })}
@@ -216,11 +320,11 @@ export const QuickAddExpenseModal: React.FC<QuickAddExpenseModalProps> = ({
           {/* Optional Item Description */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-zinc-300">
-              Description <span className="text-zinc-500 font-normal">(optional)</span>
+              Description <span className="text-zinc-500 font-normal">(optional details)</span>
             </label>
             <input
               type="text"
-              placeholder="e.g. Cold Brew, Swiggy Dinner, Uber Cab"
+              placeholder="e.g. Swiggy Dinner, Netflix Premium, Electric Bill"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-xs text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-emerald-500"
