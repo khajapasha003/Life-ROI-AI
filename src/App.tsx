@@ -21,6 +21,7 @@ import {
   AlertTriangle,
   Award,
   Download,
+  Bell,
 } from 'lucide-react';
 import { AnalysisResult, CurrencyCode, EmotionalSentimentModifier } from './types/roi';
 import { SAMPLE_PRESETS } from './data/presets';
@@ -41,6 +42,12 @@ import { PerformanceTrendsView } from './components/PerformanceTrendsView';
 import { VoiceLoggerButton } from './components/VoiceLoggerButton';
 import { MicroHabitsTracker } from './components/MicroHabitsTracker';
 import { DailyReflectionCard } from './components/DailyReflectionCard';
+import { NotificationSettingsModal } from './components/NotificationSettingsModal';
+import {
+  getSavedNotificationSettings,
+  scheduleEveningNotification,
+  NotificationSettings,
+} from './utils/notificationService';
 import { calculateMilestones } from './utils/milestones';
 import { exportBlueprintPdf } from './utils/exportPdf';
 
@@ -66,6 +73,8 @@ export default function App() {
   const [isJsonOpen, setIsJsonOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isMilestonesOpen, setIsMilestonesOpen] = useState(false);
+  const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
+  const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>(getSavedNotificationSettings);
   const [simulatedStreak, setSimulatedStreak] = useState<number | undefined>(undefined);
   const [copiedReport, setCopiedReport] = useState(false);
   const [copiedJson, setCopiedJson] = useState(false);
@@ -115,6 +124,14 @@ export default function App() {
     if (!analysis) {
       const initial = generateFallbackAnalysis(SAMPLE_PRESETS[0].logText, 'USD');
       setAnalysis(initial);
+    }
+  }, []);
+
+  // Ensure evening reminder is active if enabled
+  useEffect(() => {
+    const s = getSavedNotificationSettings();
+    if (s.enabled) {
+      scheduleEveningNotification(s.hour, s.minute).catch(() => {});
     }
   }, []);
 
@@ -328,6 +345,22 @@ export default function App() {
               </span>
             )}
           </button>
+          <button
+            onClick={() => setIsNotificationModalOpen(true)}
+            className={`px-2 py-1 rounded-lg border transition-colors flex items-center gap-1.5 cursor-pointer ${
+              notificationSettings.enabled
+                ? 'bg-amber-500/10 border-amber-500/30 text-amber-300 hover:bg-amber-500/20'
+                : 'border-transparent text-zinc-400 hover:text-zinc-100 hover:bg-zinc-850'
+            }`}
+            title="Evening Habit & Expense Reminder"
+            aria-label="Evening Habit & Expense Reminder"
+          >
+            <Bell className="w-3.5 h-3.5 text-amber-400" />
+            <span>Evening Reminder</span>
+            {notificationSettings.enabled && (
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            )}
+          </button>
         </nav>
 
         {/* Zone 3: 1-2 primary actions & Currency selector */}
@@ -348,6 +381,15 @@ export default function App() {
             </select>
             <ChevronDown className="w-3.5 h-3.5 text-zinc-400 absolute right-2 top-2.5 pointer-events-none" />
           </div>
+
+          <button
+            onClick={() => setIsNotificationModalOpen(true)}
+            className="md:hidden p-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white"
+            title="Evening Reminder"
+            aria-label="Evening Reminder"
+          >
+            <Bell className="w-4 h-4 text-amber-400" />
+          </button>
 
           <button
             onClick={() => setIsHistoryOpen(true)}
@@ -937,6 +979,12 @@ export default function App() {
         badges={badges}
         onSimulateStreakToggle={() => setSimulatedStreak((prev) => (prev === 3 ? undefined : 3))}
         isSimulatedStreak={simulatedStreak === 3}
+      />
+
+      <NotificationSettingsModal
+        isOpen={isNotificationModalOpen}
+        onClose={() => setIsNotificationModalOpen(false)}
+        onSettingsSaved={(newSettings) => setNotificationSettings(newSettings)}
       />
     </div>
   );
