@@ -7,7 +7,11 @@ const CURRENCY_SYMBOLS: Record<CurrencyCode, string> = {
   GBP: '£',
 };
 
-export function generateFallbackAnalysis(logText: string, currency: CurrencyCode): AnalysisResult {
+export function generateFallbackAnalysis(
+  logText: string,
+  currency: CurrencyCode,
+  wealthGoal?: string
+): AnalysisResult {
   const sym = CURRENCY_SYMBOLS[currency] || '$';
 
   // Detect high-discipline input
@@ -30,7 +34,20 @@ export function generateFallbackAnalysis(logText: string, currency: CurrencyCode
   const tenYearCompAt12 = Math.round(dailySaved * 30 * 12 * 17.5);
 
   const calculatedScore = isHighDiscipline ? 91 : 68;
-  const headline = isHighDiscipline
+
+  // Wealth goal calculations
+  let wealthGoalRunway: string | undefined = undefined;
+  let goalDays = 35;
+  if (wealthGoal && wealthGoal.trim()) {
+    const matchNumber = wealthGoal.match(/[\d,]+(\.\d+)?/);
+    const parsedAmount = matchNumber ? parseFloat(matchNumber[0].replace(/,/g, '')) : (isINR ? 25000 : 500);
+    goalDays = Math.max(1, Math.ceil(parsedAmount / Math.max(0.5, dailySaved)));
+    wealthGoalRunway = `At ${sym}${dailySaved}/day recovered, your goal "${wealthGoal.trim()}" is fully funded in ~${goalDays} days.`;
+  }
+
+  const headline = wealthGoal && wealthGoal.trim()
+    ? `Target Funded in ~${goalDays} Days (${isHighDiscipline ? 'Elite Pace' : 'Moderate Pace'})`
+    : isHighDiscipline
     ? 'Elite Habit Execution, Minimal Friction'
     : 'Solid Core Focus, Leaky Mid-Day Friction';
 
@@ -51,7 +68,9 @@ export function generateFallbackAnalysis(logText: string, currency: CurrencyCode
       currency === 'INR'
         ? 'Nifty 50 Index Fund / Liquid SGB'
         : 'Low-Cost Vanguard S&P 500 ETF (VOO)',
-    tomorrowQuickWin: 'Set up coffee beans and water tumbler on counter tonight (Saves 18 mins).',
+    tomorrowQuickWin: wealthGoal
+      ? `Auto-divert ${sym}${dailySaved} to your goal escrow account first thing tomorrow morning.`
+      : 'Set up coffee beans and water tumbler on counter tonight (Saves 18 mins).',
     // Extended metrics
     dailyScore: calculatedScore,
     scoreBreakdown: {
@@ -61,6 +80,8 @@ export function generateFallbackAnalysis(logText: string, currency: CurrencyCode
     },
     currencySymbol: sym,
     currencyCode: currency,
+    wealthGoal: wealthGoal?.trim(),
+    wealthGoalRunway: wealthGoalRunway,
     leaksDetected: [
       {
         title: 'Impulse Food Delivery & Service Surcharges',
@@ -94,20 +115,27 @@ export function generateFallbackAnalysis(logText: string, currency: CurrencyCode
           : 'Low-Cost Vanguard S&P 500 ETF (VOO)',
       oneYearCompounded: oneYearComp,
       tenYearCompounded: tenYearCompAt12,
-      actionDirective: `Instantly auto-transfer ${sym}${dailySaved} to your index investment app today.`,
+      actionDirective: wealthGoalRunway
+        ? `${wealthGoalRunway} Auto-transfer ${sym}${dailySaved} directly to this milestone today.`
+        : `Instantly auto-transfer ${sym}${dailySaved} to your index investment app today.`,
     },
     quickWinTomorrow: {
-      task: 'Set up your coffee beans and water tumbler on the counter tonight before sleep.',
+      task: wealthGoal
+        ? `Designate the sub-account for "${wealthGoal.trim()}" and lock in ${sym}${dailySaved} starting deposit.`
+        : 'Set up your coffee beans and water tumbler on the counter tonight before sleep.',
       durationMinutes: 5,
-      projectedImpact: `Eliminates the morning cafe detour, instantly saving ${sym}${latteSpend} and 18 minutes.`,
+      projectedImpact: wealthGoal
+        ? `Accelerates target achievement by 1 full day; establishes initial deposit inertia.`
+        : `Eliminates the morning cafe detour, instantly saving ${sym}${latteSpend} and 18 minutes.`,
     },
     conciseSummaryMarkdown: `# LIFEROI™ 30-DAY BEHAVIORAL WEALTH BLUEPRINT
 **Client Diagnostic ID:** LR-2026-X89 | **Methodology:** 12% Annuity Decay Model
 
 ## 1. EXECUTIVE DIAGNOSTIC SUMMARY
-- **Behavioral Discipline Index:** 68/100
+- **Behavioral Discipline Index:** ${calculatedScore}/100
 - **30-Day Compound Capital Leak:** ${sym}${Math.round(foodDeliveryFee * 30)}
 - **Recoverable Cash Rate:** 72%
+${wealthGoalRunway ? `- **Target Wealth Goal:** ${wealthGoal?.trim()}\n- **Projected Goal Runway:** ${wealthGoalRunway}` : ''}
 
 ## 2. ROOT LEAK ERADICATION PLAYBOOK
 - **Primary Friction Source:** Impulse Food Delivery Surcharges

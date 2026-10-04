@@ -1,14 +1,22 @@
 import React from 'react';
-import { PiggyBank, ArrowUpRight, Calculator } from 'lucide-react';
+import { PiggyBank, ArrowUpRight, Calculator, Target } from 'lucide-react';
 import { WealthShift } from '../types/roi';
 
 interface WealthShiftCardProps {
   wealth: WealthShift;
   currencySymbol: string;
+  wealthGoal?: string;
+  wealthGoalRunway?: string;
   onOpenSimulator: () => void;
 }
 
-export const WealthShiftCard: React.FC<WealthShiftCardProps> = ({ wealth, currencySymbol, onOpenSimulator }) => {
+export const WealthShiftCard: React.FC<WealthShiftCardProps> = ({
+  wealth,
+  currencySymbol,
+  wealthGoal,
+  wealthGoalRunway,
+  onOpenSimulator,
+}) => {
   return (
     <div className="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800/80 flex flex-col justify-between">
       <div>
@@ -45,6 +53,24 @@ export const WealthShiftCard: React.FC<WealthShiftCardProps> = ({ wealth, curren
             </span>
             <span className="font-semibold text-zinc-100">{wealth.divertDestination}</span>
           </div>
+
+          {/* Active Wealth Goal Highlight */}
+          {wealthGoal && (
+            <div className="p-2.5 rounded-lg bg-emerald-950/30 border border-emerald-800/40 space-y-1">
+              <div className="flex items-center justify-between text-[10px] font-semibold text-emerald-400 uppercase tracking-wider">
+                <span className="flex items-center gap-1">
+                  <Target className="w-3.5 h-3.5" />
+                  <span>Target Wealth Goal</span>
+                </span>
+                <span className="font-mono text-zinc-300">{wealthGoal}</span>
+              </div>
+              {wealthGoalRunway && (
+                <p className="text-[11px] text-emerald-200/90 leading-tight">
+                  {wealthGoalRunway}
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Compounding Projections */}
           <div className="grid grid-cols-2 gap-2 pt-1 border-t border-zinc-800/80">

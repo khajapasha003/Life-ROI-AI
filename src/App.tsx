@@ -22,6 +22,7 @@ import {
   Award,
   Download,
   Bell,
+  Target,
 } from 'lucide-react';
 import { AnalysisResult, CurrencyCode, EmotionalSentimentModifier } from './types/roi';
 import { SAMPLE_PRESETS } from './data/presets';
@@ -94,6 +95,23 @@ export default function App() {
 
   const [habitBonus, setHabitBonus] = useState(0);
   const [dailyReflection, setDailyReflection] = useState('');
+  const [wealthGoal, setWealthGoal] = useState<string>(() => {
+    try {
+      return localStorage.getItem('liferoi_wealth_goal') || 'Save $500 for emergency fund';
+    } catch {
+      return 'Save $500 for emergency fund';
+    }
+  });
+
+  const handleWealthGoalChange = (val: string) => {
+    setWealthGoal(val);
+    try {
+      localStorage.setItem('liferoi_wealth_goal', val);
+    } catch (e) {
+      console.warn(e);
+    }
+  };
+
   const [sentimentModifier, setSentimentModifier] = useState<EmotionalSentimentModifier>({
     type: 'balanced',
     modifier: 0,
@@ -125,7 +143,7 @@ export default function App() {
   // Sync initial sample analysis on first load if none exists
   useEffect(() => {
     if (!analysis) {
-      const initial = generateFallbackAnalysis(SAMPLE_PRESETS[0].logText, 'USD');
+      const initial = generateFallbackAnalysis(SAMPLE_PRESETS[0].logText, 'USD', wealthGoal);
       setAnalysis(initial);
     }
   }, []);
@@ -184,6 +202,7 @@ export default function App() {
     try {
       const payload: any = {
         currency: selectedCurrency,
+        wealthGoal: wealthGoal.trim(),
       };
 
       let combinedLog = textToAnalyze.trim();
@@ -216,6 +235,7 @@ export default function App() {
       const data: AnalysisResult = await res.json();
       const enrichedResult: AnalysisResult = {
         ...data,
+        wealthGoal: wealthGoal.trim(),
         id: `analysis-${Date.now()}`,
         timestamp: new Date().toISOString(),
       };
@@ -233,7 +253,7 @@ export default function App() {
     } catch (err: any) {
       console.warn('API call failed, falling back to instant local evaluation engine:', err.message);
       // Fallback
-      const fallbackResult = generateFallbackAnalysis(logText, selectedCurrency);
+      const fallbackResult = generateFallbackAnalysis(textToAnalyze, selectedCurrency, wealthGoal);
       setAnalysis(fallbackResult);
       setErrorMsg('Using local optimization engine (API connection offline or pending).');
     } finally {
@@ -580,6 +600,66 @@ export default function App() {
               </div>
             )}
 
+            {/* Daily Wealth Goal Input Area */}
+            <div className="p-3.5 rounded-xl bg-zinc-950/80 border border-zinc-800/80 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-zinc-200 flex items-center gap-1.5">
+                  <Target className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Daily Wealth Goal / Target</span>
+                </label>
+                <span className="text-[10px] text-zinc-500 font-mono">
+                  Calibrates Audit Summary
+                </span>
+              </div>
+
+              <div className="relative">
+                <input
+                  type="text"
+                  value={wealthGoal}
+                  onChange={(e) => handleWealthGoalChange(e.target.value)}
+                  placeholder={
+                    selectedCurrency === 'INR'
+                      ? 'e.g., Save ₹25,000 for emergency fund, accumulate ₹50k in Nifty 50'
+                      : 'e.g., Save $500 for emergency fund, accumulate $1,000 in VOO index ETF'
+                  }
+                  className="w-full pl-3 pr-8 py-2 rounded-xl bg-zinc-900 border border-zinc-800 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 transition-colors font-sans"
+                />
+                {wealthGoal && (
+                  <button
+                    type="button"
+                    onClick={() => handleWealthGoalChange('')}
+                    className="absolute right-2.5 top-2.5 text-zinc-500 hover:text-zinc-300 text-xs cursor-pointer"
+                    title="Clear goal"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+
+              {/* Goal Presets */}
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  selectedCurrency === 'INR' ? 'Save ₹25,000 emergency fund' : 'Save $500 for emergency fund',
+                  selectedCurrency === 'INR' ? 'Accumulate ₹50,000 in Nifty 50' : 'Accumulate $1,000 in VOO ETF',
+                  selectedCurrency === 'INR' ? 'Eradicate ₹30,000 debt balance' : 'Pay off $800 credit balance',
+                  selectedCurrency === 'INR' ? 'Save ₹15,000 travel fund' : 'Save $350 for travel sinking fund',
+                ].map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => handleWealthGoalChange(preset)}
+                    className={`px-2 py-0.5 rounded-md text-[10px] border transition-colors cursor-pointer ${
+                      wealthGoal === preset
+                        ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300 font-medium'
+                        : 'bg-zinc-900/60 border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:border-zinc-700'
+                    }`}
+                  >
+                    {preset}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Daily Emotional Reflection */}
             <DailyReflectionCard
               onSentimentChange={(modifier, text) => {
@@ -861,6 +941,8 @@ export default function App() {
                     <WealthShiftCard
                       wealth={analysis.microRoiWealthShift}
                       currencySymbol={analysis.currencySymbol}
+                      wealthGoal={analysis.wealthGoal || wealthGoal}
+                      wealthGoalRunway={analysis.wealthGoalRunway}
                       onOpenSimulator={() => setIsSimulatorOpen(true)}
                     />
 

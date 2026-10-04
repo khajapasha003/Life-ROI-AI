@@ -131,6 +131,10 @@ const ANALYSIS_SCHEMA = {
       },
       required: ['task', 'durationMinutes', 'projectedImpact'],
     },
+    wealthGoalRunway: {
+      type: Type.STRING,
+      description: 'Runway estimation and strategic plan to reach user wealth target using daily recovered cash.',
+    },
     conciseSummaryMarkdown: {
       type: Type.STRING,
     },
@@ -161,7 +165,7 @@ const ANALYSIS_SCHEMA = {
 
 app.post('/api/analyze', async (req, res) => {
   try {
-    const { logText, currency = 'USD', imageBase64, imageMimeType } = req.body;
+    const { logText, currency = 'USD', imageBase64, imageMimeType, wealthGoal } = req.body;
 
     if (!logText && !imageBase64) {
       return res.status(400).json({ error: 'Please provide either daily activity text or an image/receipt to analyze.' });
@@ -212,9 +216,11 @@ RULES:
   - 30-Day Monthly Leak = Daily Base Spend * 22 days.
   - Recoverable Daily Cash = 72% of impulse spend.
   - 10-Year Opportunity Cost = Daily Recoverable Cash * 30 * 12 compounded at 12.0% annual yield (~17.5x annual multiplier).
+- Wealth Goal Influence:
+  - If user provides an explicit "wealthGoal" (e.g., 'Save $500 for emergency fund'), calculate how many days of recovered leak cash achieve this milestone. Integrate this target directly into headline, microRoiWealthShift actionDirective, and provide a concrete runway in wealthGoalRunway (e.g. "At $14.40/day saved, your $500 Emergency Reserve is fully funded in ~35 days.").
 - Never output markdown fences or conversational preambles. Output pure JSON only.
 
-Also populate supporting dashboard fields: dailyScore (= score), scoreBreakdown, currencySymbol = "${targetCurrency.symbol}", currencyCode = "${targetCurrency.code}", leaksDetected, totalDailyWaste, totalMonthlyWaste, immediateOptimizationFix, microRoiWealthShift, quickWinTomorrow.
+Also populate supporting dashboard fields: dailyScore (= score), scoreBreakdown, currencySymbol = "${targetCurrency.symbol}", currencyCode = "${targetCurrency.code}", leaksDetected, totalDailyWaste, totalMonthlyWaste, immediateOptimizationFix, microRoiWealthShift, quickWinTomorrow, wealthGoalRunway.
 CRITICAL FOR conciseSummaryMarkdown: Synthesize an executive-grade 4-section summary strictly in this format:
 # LIFEROI™ 30-DAY BEHAVIORAL WEALTH BLUEPRINT
 **Client Diagnostic ID:** LR-2026-X89 | **Methodology:** 12% Annuity Decay Model
@@ -223,6 +229,7 @@ CRITICAL FOR conciseSummaryMarkdown: Synthesize an executive-grade 4-section sum
 - **Behavioral Discipline Index:** [Score]/100
 - **30-Day Compound Capital Leak:** [leakMonthlyWaste]
 - **Recoverable Cash Rate:** 72%
+${wealthGoal ? `- **Target Wealth Goal:** ${wealthGoal}\n- **Projected Goal Runway:** [Calculated days to reach goal using recovered cash]` : ''}
 
 ## 2. ROOT LEAK ERADICATION PLAYBOOK
 - **Primary Friction Source:** [leakName]
@@ -250,9 +257,13 @@ CRITICAL FOR conciseSummaryMarkdown: Synthesize an executive-grade 4-section sum
       });
     }
 
-    const userPromptText = logText
+    let userPromptText = logText
       ? `User Daily Log & Expense Input:\n"""\n${logText}\n"""\nPreferred Currency: ${targetCurrency.code} (${targetCurrency.symbol})`
       : `Please analyze this uploaded receipt/schedule image for lifestyle habits, micro-expenses, and potential leaks. Preferred Currency: ${targetCurrency.code} (${targetCurrency.symbol})`;
+
+    if (wealthGoal && typeof wealthGoal === 'string' && wealthGoal.trim()) {
+      userPromptText += `\n\nUSER'S EXPLICIT WEALTH GOAL TARGET: "${wealthGoal.trim()}". Align the diagnosis, runway, headline, and action directives toward achieving this target!`;
+    }
 
     contents.push({ text: userPromptText });
 
@@ -292,6 +303,7 @@ CRITICAL FOR conciseSummaryMarkdown: Synthesize an executive-grade 4-section sum
 
     return res.json({
       ...parsedData,
+      wealthGoal: wealthGoal || '',
       strictAudit: strictResult,
     });
   } catch (error: any) {

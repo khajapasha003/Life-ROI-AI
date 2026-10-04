@@ -80,6 +80,8 @@ export interface AnalysisResult {
   microRoiWealthShift: WealthShift;
   quickWinTomorrow: QuickWin;
   conciseSummaryMarkdown: string;
+  wealthGoal?: string;
+  wealthGoalRunway?: string;
 }
 
 export interface LogPreset {
