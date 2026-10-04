@@ -26,3 +26,219 @@
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.22);
 }
+
+/* ==========================================================================
+   Financial Ledger Light Theme (High Contrast Editorial Aesthetic)
+   Inspired by classic Swiss financial ledgers, Bloomberg, and Wall Street Journal
+   ========================================================================== */
+
+html.theme-financial-ledger {
+  color-scheme: light;
+}
+
+html.theme-financial-ledger ::-webkit-scrollbar-thumb {
+  background: rgba(15, 23, 42, 0.2);
+}
+
+html.theme-financial-ledger ::-webkit-scrollbar-thumb:hover {
+  background: rgba(15, 23, 42, 0.35);
+}
+
+html.theme-financial-ledger body {
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+/* Surface backgrounds */
+html.theme-financial-ledger .bg-zinc-950 {
+  background-color: #ffffff !important;
+}
+
+html.theme-financial-ledger .bg-zinc-950\/90,
+html.theme-financial-ledger .bg-zinc-950\/95 {
+  background-color: rgba(255, 255, 255, 0.96) !important;
+}
+
+html.theme-financial-ledger .bg-zinc-950\/80,
+html.theme-financial-ledger .bg-zinc-950\/70,
+html.theme-financial-ledger .bg-zinc-950\/60 {
+  background-color: #f8fafc !important;
+}
+
+html.theme-financial-ledger .bg-zinc-900 {
+  background-color: #ffffff !important;
+}
+
+html.theme-financial-ledger .bg-zinc-900\/90,
+html.theme-financial-ledger .bg-zinc-900\/80,
+html.theme-financial-ledger .bg-zinc-900\/70,
+html.theme-financial-ledger .bg-zinc-900\/60,
+html.theme-financial-ledger .bg-zinc-900\/50,
+html.theme-financial-ledger .bg-zinc-900\/40 {
+  background-color: #ffffff !important;
+}
+
+html.theme-financial-ledger .bg-zinc-850,
+html.theme-financial-ledger .bg-zinc-800 {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+html.theme-financial-ledger .bg-zinc-800\/80,
+html.theme-financial-ledger .bg-zinc-800\/60,
+html.theme-financial-ledger .bg-zinc-800\/50,
+html.theme-financial-ledger .bg-zinc-800\/40 {
+  background-color: #f1f5f9 !important;
+}
+
+html.theme-financial-ledger .hover\:bg-zinc-800:hover,
+html.theme-financial-ledger .hover\:bg-zinc-800\/50:hover,
+html.theme-financial-ledger .hover\:bg-zinc-800\/80:hover {
+  background-color: #e2e8f0 !important;
+}
+
+html.theme-financial-ledger .hover\:bg-zinc-700:hover {
+  background-color: #cbd5e1 !important;
+}
+
+/* Hairline high-contrast borders */
+html.theme-financial-ledger .border-zinc-800,
+html.theme-financial-ledger .border-zinc-800\/80,
+html.theme-financial-ledger .border-zinc-800\/60,
+html.theme-financial-ledger .border-zinc-800\/50,
+html.theme-financial-ledger .border-zinc-800\/40 {
+  border-color: #cbd5e1 !important;
+}
+
+html.theme-financial-ledger .border-zinc-700 {
+  border-color: #94a3b8 !important;
+}
+
+/* High contrast typography in deep ledger ink */
+html.theme-financial-ledger .text-zinc-100,
+html.theme-financial-ledger .text-white {
+  color: #0f172a !important;
+}
+
+html.theme-financial-ledger .text-zinc-200 {
+  color: #1e293b !important;
+}
+
+html.theme-financial-ledger .text-zinc-300 {
+  color: #334155 !important;
+}
+
+html.theme-financial-ledger .text-zinc-400 {
+  color: #475569 !important;
+}
+
+html.theme-financial-ledger .text-zinc-500 {
+  color: #64748b !important;
+}
+
+html.theme-financial-ledger .text-zinc-600 {
+  color: #94a3b8 !important;
+}
+
+/* Financial Emerald Accents (Deep Forest / Investment Green) */
+html.theme-financial-ledger .text-emerald-400 {
+  color: #047857 !important;
+}
+
+html.theme-financial-ledger .text-emerald-300 {
+  color: #065f46 !important;
+}
+
+html.theme-financial-ledger .bg-emerald-500\/10,
+html.theme-financial-ledger .bg-emerald-500\/15,
+html.theme-financial-ledger .bg-emerald-500\/20 {
+  background-color: #ecfdf5 !important;
+}
+
+html.theme-financial-ledger .border-emerald-500\/20,
+html.theme-financial-ledger .border-emerald-500\/30,
+html.theme-financial-ledger .border-emerald-500\/40,
+html.theme-financial-ledger .border-emerald-500\/50 {
+  border-color: #a7f3d0 !important;
+}
+
+/* Financial Crimson Accents (Leaks / Critical) */
+html.theme-financial-ledger .text-rose-400 {
+  color: #b91c1c !important;
+}
+
+html.theme-financial-ledger .text-rose-300 {
+  color: #991b1b !important;
+}
+
+html.theme-financial-ledger .bg-rose-500\/10,
+html.theme-financial-ledger .bg-rose-500\/15,
+html.theme-financial-ledger .bg-rose-500\/20,
+html.theme-financial-ledger .bg-rose-950\/20,
+html.theme-financial-ledger .bg-rose-950\/30 {
+  background-color: #fff1f2 !important;
+}
+
+html.theme-financial-ledger .border-rose-500\/20,
+html.theme-financial-ledger .border-rose-500\/30,
+html.theme-financial-ledger .border-rose-500\/40,
+html.theme-financial-ledger .border-rose-800\/60,
+html.theme-financial-ledger .border-rose-900\/30 {
+  border-color: #fecdd3 !important;
+}
+
+/* Financial Warning Accents (Thresholds / Amber) */
+html.theme-financial-ledger .text-amber-400,
+html.theme-financial-ledger .text-amber-300 {
+  color: #b45309 !important;
+}
+
+html.theme-financial-ledger .bg-amber-500\/10,
+html.theme-financial-ledger .bg-amber-500\/15,
+html.theme-financial-ledger .bg-amber-500\/20,
+html.theme-financial-ledger .bg-amber-950\/20,
+html.theme-financial-ledger .bg-amber-950\/30 {
+  background-color: #fffbeb !important;
+}
+
+html.theme-financial-ledger .border-amber-500\/20,
+html.theme-financial-ledger .border-amber-500\/30,
+html.theme-financial-ledger .border-amber-500\/40,
+html.theme-financial-ledger .border-amber-700\/60 {
+  border-color: #fde68a !important;
+}
+
+/* Form Controls & Inputs */
+html.theme-financial-ledger input,
+html.theme-financial-ledger textarea,
+html.theme-financial-ledger select {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+html.theme-financial-ledger input::placeholder,
+html.theme-financial-ledger textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+html.theme-financial-ledger input:focus,
+html.theme-financial-ledger textarea:focus,
+html.theme-financial-ledger select:focus {
+  border-color: #047857 !important;
+  box-shadow: 0 0 0 1px #047857 !important;
+}
+
+/* Primary Action CTA buttons */
+html.theme-financial-ledger .bg-emerald-400 {
+  background-color: #059669 !important;
+  color: #ffffff !important;
+}
+
+html.theme-financial-ledger .bg-emerald-400:hover {
+  background-color: #047857 !important;
+}
+
+html.theme-financial-ledger .text-zinc-950 {
+  color: #0f172a !important;
+}

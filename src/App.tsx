@@ -47,6 +47,7 @@ import { NotificationSettingsModal } from './components/NotificationSettingsModa
 import { QuickExpenseFab } from './components/QuickExpenseFab';
 import { QuickAddExpenseModal, QuickExpenseItem } from './components/QuickAddExpenseModal';
 import { SpendingLeaksPieChart } from './components/SpendingLeaksPieChart';
+import { ThemeToggle, AppTheme } from './components/ThemeToggle';
 import { BudgetThresholdToast, BudgetThresholdToastData } from './components/BudgetThresholdToast';
 import { BudgetThresholdMonitor } from './components/BudgetThresholdMonitor';
 import { parseDailyGoalTarget, computeBudgetThreshold } from './utils/budgetThreshold';
@@ -88,6 +89,39 @@ export default function App() {
   const [copiedReport, setCopiedReport] = useState(false);
   const [copiedJson, setCopiedJson] = useState(false);
   const [outputViewMode, setOutputViewMode] = useState<'dashboard' | 'trends' | 'json' | 'markdown'>('dashboard');
+
+  // Theme Management: 'deep-space' (dark) vs 'financial-ledger' (high-contrast light)
+  const [theme, setTheme] = useState<AppTheme>(() => {
+    try {
+      const saved = localStorage.getItem('liferoi_theme') as AppTheme;
+      if (saved === 'financial-ledger' || saved === 'deep-space') {
+        return saved;
+      }
+    } catch (e) {
+      console.warn(e);
+    }
+    return 'deep-space';
+  });
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === 'financial-ledger') {
+      root.classList.add('theme-financial-ledger');
+      root.classList.remove('theme-deep-space');
+    } else {
+      root.classList.add('theme-deep-space');
+      root.classList.remove('theme-financial-ledger');
+    }
+    try {
+      localStorage.setItem('liferoi_theme', theme);
+    } catch (e) {
+      console.warn(e);
+    }
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === 'deep-space' ? 'financial-ledger' : 'deep-space'));
+  };
 
   const [history, setHistory] = useState<AnalysisResult[]>(() => {
     try {
@@ -512,6 +546,9 @@ export default function App() {
             </select>
             <ChevronDown className="w-3.5 h-3.5 text-zinc-400 absolute right-2 top-2.5 pointer-events-none" />
           </div>
+
+          {/* Theme Toggle: Deep Space (Dark) vs Financial Ledger (High-Contrast Light) */}
+          <ThemeToggle theme={theme} onToggle={toggleTheme} />
 
           <button
             onClick={() => setIsNotificationModalOpen(true)}
