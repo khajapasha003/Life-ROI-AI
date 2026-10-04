@@ -46,6 +46,10 @@ import { DailyReflectionCard } from './components/DailyReflectionCard';
 import { NotificationSettingsModal } from './components/NotificationSettingsModal';
 import { QuickExpenseFab } from './components/QuickExpenseFab';
 import { QuickAddExpenseModal } from './components/QuickAddExpenseModal';
+import { BudgetThresholdToast, BudgetThresholdToastData } from './components/BudgetThresholdToast';
+import { BudgetThresholdMonitor } from './components/BudgetThresholdMonitor';
+import { parseDailyGoalTarget, computeBudgetThreshold } from './utils/budgetThreshold';
+import { playThresholdWarningChime } from './utils/audioChime';
 import {
   getSavedNotificationSettings,
   scheduleEveningNotification,
@@ -139,6 +143,71 @@ export default function App() {
   const { streakState, badges } = calculateMilestones(history, effectiveAnalysis || analysis, simulatedStreak);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Budget Threshold Monitoring System state
+  const [budgetToast, setBudgetToast] = useState<BudgetThresholdToastData | null>(null);
+  const lastAlertedKeyRef = useRef<string>('');
+
+  const currentDailyGoalTarget = useMemo(() => {
+    return parseDailyGoalTarget(wealthGoal, selectedCurrency);
+  }, [wealthGoal, selectedCurrency]);
+
+  const budgetThresholdStatus = useMemo(() => {
+    const trackedExpenses = effectiveAnalysis?.totalDailyWaste ?? (analysis?.totalDailyWaste ?? 0);
+    return computeBudgetThreshold(trackedExpenses, currentDailyGoalTarget);
+  }, [effectiveAnalysis, analysis, currentDailyGoalTarget]);
+
+  // Alert monitoring: automatically trigger toast notification when daily tracked expenses exceed 70% of configured Daily Wealth Goal
+  useEffect(() => {
+    if (!analysis) return;
+    const tracked = effectiveAnalysis?.totalDailyWaste ?? (analysis.totalDailyWaste ?? 0);
+    const target = currentDailyGoalTarget;
+    const pct = Math.round((tracked / Math.max(1, target)) * 100);
+
+    if (pct >= 70) {
+      const alertKey = `${tracked.toFixed(2)}-${target.toFixed(2)}-${selectedCurrency}-${wealthGoal}`;
+      if (lastAlertedKeyRef.current !== alertKey) {
+        lastAlertedKeyRef.current = alertKey;
+        const toastData: BudgetThresholdToastData = {
+          id: `budget-alert-${Date.now()}`,
+          trackedExpenses: tracked,
+          dailyGoalTarget: target,
+          percentage: pct,
+          currencySymbol: analysis.currencySymbol || CURRENCIES.find((c) => c.code === selectedCurrency)?.symbol || '$',
+          goalTitle: wealthGoal || 'Daily Wealth Goal',
+          timestamp: Date.now(),
+        };
+        setBudgetToast(toastData);
+        playThresholdWarningChime();
+      }
+    }
+  }, [analysis, effectiveAnalysis, currentDailyGoalTarget, wealthGoal, selectedCurrency]);
+
+  const handleTriggerTestAlert = () => {
+    const target = currentDailyGoalTarget;
+    const currentTracked = effectiveAnalysis?.totalDailyWaste ?? (analysis?.totalDailyWaste ?? (selectedCurrency === 'INR' ? 1200 : 20.5));
+    const testTracked = Math.max(currentTracked, target * 0.78);
+    const pct = Math.round((testTracked / Math.max(1, target)) * 100);
+
+    const toastData: BudgetThresholdToastData = {
+      id: `budget-alert-test-${Date.now()}`,
+      trackedExpenses: testTracked,
+      dailyGoalTarget: target,
+      percentage: pct,
+      currencySymbol: analysis?.currencySymbol || CURRENCIES.find((c) => c.code === selectedCurrency)?.symbol || '$',
+      goalTitle: wealthGoal || 'Daily Wealth Goal',
+      timestamp: Date.now(),
+    };
+    setBudgetToast(toastData);
+    playThresholdWarningChime();
+  };
+
+  const handleScrollToLeaks = () => {
+    const el = document.getElementById('leaks-card-section');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  };
 
   // Sync initial sample analysis on first load if none exists
   useEffect(() => {
@@ -658,6 +727,24 @@ export default function App() {
                   </button>
                 ))}
               </div>
+
+              {/* Threshold Calibration Meta */}
+              <div className="pt-1 border-t border-zinc-800/80 flex items-center justify-between text-[11px] font-mono text-zinc-400">
+                <span>
+                  Daily Goal Budget:{' '}
+                  <strong className="text-zinc-200">
+                    {activeCurrencySymbol}
+                    {currentDailyGoalTarget.toFixed(2)}
+                  </strong>
+                </span>
+                <span className="text-amber-400 font-medium">
+                  70% Alert Limit:{' '}
+                  <strong className="text-amber-300">
+                    {activeCurrencySymbol}
+                    {(currentDailyGoalTarget * 0.7).toFixed(2)}
+                  </strong>
+                </span>
+              </div>
             </div>
 
             {/* Daily Emotional Reflection */}
@@ -922,8 +1009,18 @@ export default function App() {
                     habitBonus={habitBonus}
                   />
 
+                  {/* 5. Budget Threshold Monitoring System (Alerts when daily spend exceeds 70% of Daily Wealth Goal) */}
+                  <BudgetThresholdMonitor
+                    trackedExpenses={effectiveAnalysis?.totalDailyWaste ?? (analysis.totalDailyWaste ?? 0)}
+                    dailyGoalTarget={currentDailyGoalTarget}
+                    goalTitle={wealthGoal || 'Daily Wealth Goal'}
+                    currencySymbol={analysis.currencySymbol || activeCurrencySymbol}
+                    onTriggerTestAlert={handleTriggerTestAlert}
+                    onViewLeaks={handleScrollToLeaks}
+                  />
+
                   {/* Bento Grid: 4 Core Pillars */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div id="leaks-card-section" className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {/* 2. Leaks Detected */}
                     <LeaksCard
                       leaks={analysis.leaksDetected}
@@ -1094,6 +1191,13 @@ export default function App() {
         currencySymbol={activeCurrencySymbol}
         currencyCode={selectedCurrency}
         onExpenseAdded={handleQuickExpenseAdded}
+      />
+
+      {/* Budget Threshold Toast Notification (Alerts when daily tracked expenses exceed 70% of Daily Wealth Goal) */}
+      <BudgetThresholdToast
+        toast={budgetToast}
+        onDismiss={() => setBudgetToast(null)}
+        onViewLeaks={handleScrollToLeaks}
       />
     </div>
   );
